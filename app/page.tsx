@@ -3,12 +3,14 @@
 import { useState } from "react";
 import type { GeneratedApp } from "../types/app";
 import { PhoneFrame } from "../components/preview/PhoneFrame";
+import { ScreenPreview } from "@/components/preview/ScreenPreview";
 
 export default function Home() {
   const [loading, setLoading] = useState(false);
   const [generatedApp, setGeneratedApp] = useState<GeneratedApp | null>(null);
   const [idea, setIdea] = useState("");
   const [error, setError] = useState("");
+  const [activeScreenIndex, setActiveScreenIndex] = useState(0);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -28,6 +30,7 @@ export default function Home() {
 
       const data = await res.json();
       setGeneratedApp(data);
+      setActiveScreenIndex(0);
       console.log("Generated app:", data);
     } catch (err) {
       console.error("Error:", err);
@@ -74,12 +77,12 @@ export default function Home() {
 
 
       {generatedApp && (
-        <section className="mt-6 w-full max-w-5xl">
-          <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+        <section className="mt-4 w-full max-w-5xl">
+          <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
 
             {/* LEFT SIDE: KEEP / RESTORE M3 RESULT CONTENT */}
             <div className="min-w-0 flex-1">
-              <div className="rounded border p-4">
+              <div className="rounded border p-3 md:p-4">
                 <h2 className="mb-2 text-lg font-semibold">{generatedApp.name}</h2>
 
                 <p className="mb-2 text-sm">{generatedApp.problem}</p>
@@ -111,7 +114,7 @@ export default function Home() {
                 )}
 
                 {generatedApp.userFlow && generatedApp.userFlow.length > 0 && (
-                  <div className="mb-3 text-sm">
+                  <div className="mb-2 text-sm">
                     <strong>User flow:</strong>
                     <ol className="list-decimal pl-5">
                       {generatedApp.userFlow.map((step: string, index: number) => (
@@ -138,12 +141,36 @@ export default function Home() {
             </div>
 
             {/* RIGHT SIDE: PHONE PREVIEW */}
-            <div className="w-full shrink-0 md:w-[340px]">
+            <div className="w-full shrink-0 md:w-[260px] lg:w-[280px]">
               <PhoneFrame>
-                <div className="flex h-full items-center justify-center text-sm text-neutral-500">
-                  Preview coming soon
-                </div>
+                {generatedApp.screens.length > 0 ? (
+                  <ScreenPreview
+                    title={generatedApp.screens[activeScreenIndex].title}
+                    description={generatedApp.screens[activeScreenIndex].description}
+                  />
+                ) : (
+                  <div className="flex h-full items-center justify-center text-sm text-neutral-500">
+                    No preview available
+                  </div>
+                )}
               </PhoneFrame>
+              {generatedApp.screens.length > 0 && (
+                <div className="mt-2 flex flex-wrap justify-center gap-2">
+                  {generatedApp.screens.map((screen, index) => (
+                    <button
+                      key={screen.id}
+                      type="button"
+                      onClick={() => setActiveScreenIndex(index)}
+                      className={`rounded-full border px-3 py-1 text-xs transition ${activeScreenIndex === index
+                        ? "border-black bg-white text-black"
+                        : "border-white bg-black text-white"
+                        }`}
+                    >
+                      {screen.title}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </section>
