@@ -11,8 +11,16 @@ export type AppConcept = {
   userFlow: string[]
 }
 
+export type CritiqueCategory = {
+  label: string
+  score: number
+  summary: string
+}
+
 export type Critique = {
   score: number
+  summary: string
+  categories: CritiqueCategory[]
   strengths: string[]
   weaknesses: string[]
   suggestions: string[]

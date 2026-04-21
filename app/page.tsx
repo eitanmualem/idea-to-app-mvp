@@ -1,16 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import type { GeneratedApp } from "../types/app";
-import { PhoneFrame } from "../components/preview/PhoneFrame";
-import { ScreenPreview } from "@/components/preview/ScreenPreview";
+import { useRouter } from "next/navigation";
 
 export default function Home() {
+  const router = useRouter();
+
   const [loading, setLoading] = useState(false);
-  const [generatedApp, setGeneratedApp] = useState<GeneratedApp | null>(null);
   const [idea, setIdea] = useState("");
   const [error, setError] = useState("");
-  const [activeScreenIndex, setActiveScreenIndex] = useState(0);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -29,9 +27,11 @@ export default function Home() {
       });
 
       const data = await res.json();
-      setGeneratedApp(data);
-      setActiveScreenIndex(0);
-      console.log("Generated app:", data);
+
+      sessionStorage.setItem("generatedApp", JSON.stringify(data));
+      sessionStorage.setItem("lastIdea", idea);
+
+      router.push("/results");
     } catch (err) {
       console.error("Error:", err);
       setError("Something went wrong. Please try again.");
@@ -42,140 +42,30 @@ export default function Home() {
 
   return (
     <main className="min-h-screen flex flex-col items-center justify-center p-4">
+      <form
+        onSubmit={handleSubmit}
+        className="flex w-full max-w-md flex-col gap-4"
+      >
+        <h1 className="text-center text-2xl font-bold">Idea to App MVP</h1>
 
-      {/* NEW CODE STARTS HERE */}
-      {!generatedApp && (
-        <form
-          onSubmit={handleSubmit}
-          className="flex flex-col gap-4 w-full max-w-md"
+        <textarea
+          placeholder="Describe your app idea..."
+          className="rounded border p-2"
+          rows={4}
+          value={idea}
+          onChange={(e) => setIdea(e.target.value)}
+        />
+
+        {error && <p className="text-sm text-red-600">{error}</p>}
+
+        <button
+          type="submit"
+          className="rounded border border-white bg-black px-4 py-2 text-white hover:opacity-80"
+          disabled={loading}
         >
-          <h1 className="text-2xl font-bold text-center">
-            Idea to App MVP
-          </h1>
-
-          <textarea
-            placeholder="Describe your app idea..."
-            className="border p-2 rounded"
-            rows={4}
-            value={idea}
-            onChange={(e) => setIdea(e.target.value)}
-          />
-
-          {error && (
-            <p className="text-red-600 text-sm">{error}</p>
-          )}
-
-          <button
-            type="submit"
-            className="bg-black text-white border border-white px-4 py-2 rounded hover:opacity-80"
-            disabled={loading}
-          >
-            {loading ? "Generating..." : "Generate App"}
-          </button>
-        </form>
-      )}
-
-
-      {generatedApp && (
-        <section className="mt-4 w-full max-w-5xl">
-          <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-
-            {/* LEFT SIDE: KEEP / RESTORE M3 RESULT CONTENT */}
-            <div className="min-w-0 flex-1">
-              <div className="rounded border p-3 md:p-4">
-                <h2 className="mb-2 text-lg font-semibold">{generatedApp.name}</h2>
-
-                <p className="mb-2 text-sm">{generatedApp.problem}</p>
-
-                <p className="mb-2 text-sm">
-                  <strong>Target user:</strong> {generatedApp.targetUser}
-                </p>
-
-                {generatedApp.features && generatedApp.features.length > 0 && (
-                  <div className="mb-3 text-sm">
-                    <strong>Features:</strong>
-                    <ul className="list-disc pl-5">
-                      {generatedApp.features.map((feature: string, index: number) => (
-                        <li key={index}>{feature}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                {generatedApp.screens && generatedApp.screens.length > 0 && (
-                  <div className="mb-3 text-sm">
-                    <strong>Screens:</strong>
-                    <ul className="list-disc pl-5">
-                      {generatedApp.screens.map((screen) => (
-                        <li key={screen.id}>{screen.title}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                {generatedApp.userFlow && generatedApp.userFlow.length > 0 && (
-                  <div className="mb-2 text-sm">
-                    <strong>User flow:</strong>
-                    <ol className="list-decimal pl-5">
-                      {generatedApp.userFlow.map((step: string, index: number) => (
-                        <li key={index}>{step}</li>
-                      ))}
-                    </ol>
-                  </div>
-                )}
-
-                <div className="mt-4">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setGeneratedApp(null);
-                      setIdea("");
-                      setError("");
-                    }}
-                    className="rounded border border-white bg-black px-4 py-2 text-sm text-white hover:opacity-80"
-                  >
-                    Generate another
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* RIGHT SIDE: PHONE PREVIEW */}
-            <div className="w-full shrink-0 md:w-[260px] lg:w-[280px]">
-              <PhoneFrame>
-                {generatedApp.screens.length > 0 ? (
-                  <ScreenPreview
-                    title={generatedApp.screens[activeScreenIndex].title}
-                    description={generatedApp.screens[activeScreenIndex].description}
-                  />
-                ) : (
-                  <div className="flex h-full items-center justify-center text-sm text-neutral-500">
-                    No preview available
-                  </div>
-                )}
-              </PhoneFrame>
-              {generatedApp.screens.length > 0 && (
-                <div className="mt-2 flex flex-wrap justify-center gap-2">
-                  {generatedApp.screens.map((screen, index) => (
-                    <button
-                      key={screen.id}
-                      type="button"
-                      onClick={() => setActiveScreenIndex(index)}
-                      className={`rounded-full border px-3 py-1 text-xs transition ${activeScreenIndex === index
-                        ? "border-black bg-white text-black"
-                        : "border-white bg-black text-white"
-                        }`}
-                    >
-                      {screen.title}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        </section>
-      )}
-
+          {loading ? "Generating..." : "Generate App"}
+        </button>
+      </form>
     </main>
   );
 }
